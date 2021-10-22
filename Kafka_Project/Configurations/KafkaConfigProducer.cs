@@ -6,5 +6,7 @@ namespace Kafka_Project.Configurations
 {
     public class KafkaConfigProducer
     {
+        public string BootstrapServers { get; set; }
+        public string Topic { get; set; }
     }
 }

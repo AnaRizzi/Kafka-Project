@@ -12,42 +12,46 @@ namespace Kafka_Project.Infra
 {
     public class ConsumerKafka : IConsumerKafka
     {
-        private readonly KafkaConfigConsumer _config;
+        private readonly KafkaConfigConsumer _kafkaConfig;
+        private readonly ConsumerConfig _consumerConfig;
 
         public ConsumerKafka(KafkaConfigConsumer config)
         {
-            _config = config;
-        }
+            _kafkaConfig = config;
 
-        public void GetMessage(Action<KafkaMessageConsumer> action)
-        {
-            var config = new ConsumerConfig
+            _consumerConfig = new ConsumerConfig
             {
-                BootstrapServers = _config.BootstrapServers,
-                GroupId = _config.GroupId,
+                BootstrapServers = _kafkaConfig.BootstrapServers,
+                GroupId = _kafkaConfig.GroupId,
                 AutoOffsetReset = AutoOffsetReset.Latest,
                 EnableAutoCommit = true, // (the default)
                 EnableAutoOffsetStore = false
             };
+        }
 
-            using (var consumer = new ConsumerBuilder<string, string>(config).Build())
+        public void GetMessage(Action<KafkaMessageConsumer> action)
+        {
+            using (var consumer = new ConsumerBuilder<string, string>(_consumerConfig).Build())
             {
-                consumer.Subscribe(_config.Topic);
+                consumer.Subscribe(_kafkaConfig.Topic);
 
-                var consumeResult = consumer.Consume();
-
-                //processar mensagem
                 try
                 {
-                    if (consumeResult != null)
-                    {
-                        Console.WriteLine(consumeResult.Message.Key);
-                        Console.WriteLine(consumeResult.Message.Value);
-                        Console.WriteLine(consumeResult.Offset);
+                    var consumeResult = consumer.Consume();
 
-                        var message = JsonSerializer.Deserialize<KafkaMessageConsumer>(consumeResult.Message.Value);
-                        action(message);
+                    //processar mensagem
+                
+                    if (consumeResult == null)
+                    {
+                        //lançar exceção
                     }
+
+                    Console.WriteLine(consumeResult.Message.Key);
+                    Console.WriteLine(consumeResult.Message.Value);
+                    Console.WriteLine(consumeResult.Offset);
+
+                    var message = JsonSerializer.Deserialize<KafkaMessageConsumer>(consumeResult.Message.Value);
+                    action(message);
 
                     consumer.StoreOffset(consumeResult);
                 }

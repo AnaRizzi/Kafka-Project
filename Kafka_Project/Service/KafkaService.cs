@@ -25,6 +25,12 @@ namespace Kafka_Project.Service
         public void ProcessMessage(KafkaMessageConsumer message)
         {
             Console.WriteLine(message.Id);
+
+            var messageProducer = new KafkaMessageProducer(message);
+
+            var payload = new Message<KafkaMessageProducer>(messageProducer);
+
+            _producer.Publish(payload);
         }
     }
 }

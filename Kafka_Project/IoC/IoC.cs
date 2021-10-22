@@ -20,7 +20,7 @@ namespace Kafka_Project.IoC
             //TODO
             services.AddSingleton<IKafkaService, KafkaService>();
             services.AddSingleton<IProducerKafka, ProducerKafka>();
-            //services.AddSingleton(configuration.GetSection(KAFKA_PRODUCER).Get<KafkaConfigProducer>());
+            services.AddSingleton(configuration.GetSection(KAFKA_PRODUCER).Get<KafkaConfigProducer>());
             services.AddSingleton<IConsumerKafka, ConsumerKafka>();
             services.AddSingleton(configuration.GetSection(KAFKA_CONSUMER).Get<KafkaConfigConsumer>());
 
