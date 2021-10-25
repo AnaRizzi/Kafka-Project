@@ -1,8 +1,10 @@
 ﻿using Kafka_Project.Interfaces;
 using Kafka_Project.Models;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Kafka_Project.Service
 {
@@ -10,11 +12,15 @@ namespace Kafka_Project.Service
     {
         private readonly IConsumerKafka _consumer;
         private readonly IProducerKafka _producer;
+        private readonly ILogger<KafkaService> _logger;
 
-        public KafkaService(IConsumerKafka consumer, IProducerKafka producer)
+
+        public KafkaService(IConsumerKafka consumer, IProducerKafka producer, ILogger<KafkaService> logger)
         {
             _consumer = consumer;
             _producer = producer;
+            _logger = logger;
+
         }
         public void ConsumeMessage()
         {
@@ -22,15 +28,27 @@ namespace Kafka_Project.Service
             _consumer.GetMessage(ProcessMessage);
         }
 
-        public void ProcessMessage(KafkaMessageConsumer message)
+        public async Task ProcessMessage(KafkaMessageConsumer message)
         {
-            Console.WriteLine(message.Id);
+            try
+            {
+                _logger.LogInformation("Iniciando o processamento da mensagem" + message.Id);
 
-            var messageProducer = new KafkaMessageProducer(message);
+                var messageProducer = new KafkaMessageProducer(message);
 
-            var payload = new Message<KafkaMessageProducer>(messageProducer);
+                var payload = new Message<KafkaMessageProducer>(messageProducer);
 
-            _producer.Publish(payload);
+                await _producer.Publish(payload);
+
+                _logger.LogInformation("Mensagem publicada" + message.Id);
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogInformation("Erro ao processar mensagem, será enviada para deadletter. Id: " + message.Id + " Erro: " + ex.Message);
+
+                await _consumer.SendDeadLetter(message);
+            }
         }
     }
 }
