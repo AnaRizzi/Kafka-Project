@@ -3,10 +3,6 @@ using Kafka_Project.Configurations;
 using Kafka_Project.Interfaces;
 using Kafka_Project.Models;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Text.Json;
-using System.Threading;
 
 namespace Kafka_Project.Infra
 {
@@ -31,7 +27,9 @@ namespace Kafka_Project.Infra
 
         public void GetMessage(Action<KafkaMessageConsumer> action)
         {
-            using (var consumer = new ConsumerBuilder<string, string>(_consumerConfig).Build())
+            using (var consumer = new ConsumerBuilder<string, KafkaMessageConsumer>(_consumerConfig)
+                .SetValueDeserializer(new Deserializer<KafkaMessageConsumer>())
+                .Build())
             {
                 consumer.Subscribe(_kafkaConfig.Topic);
 
@@ -40,7 +38,7 @@ namespace Kafka_Project.Infra
                     var consumeResult = consumer.Consume();
 
                     //processar mensagem
-                
+
                     if (consumeResult == null)
                     {
                         //lançar exceção
@@ -50,7 +48,7 @@ namespace Kafka_Project.Infra
                     Console.WriteLine(consumeResult.Message.Value);
                     Console.WriteLine(consumeResult.Offset);
 
-                    var message = JsonSerializer.Deserialize<KafkaMessageConsumer>(consumeResult.Message.Value);
+                    var message = consumeResult.Message.Value;
                     action(message);
 
                     consumer.StoreOffset(consumeResult);
